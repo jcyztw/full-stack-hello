@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 
 #include "as.h"
 #include "opcode.h"
@@ -32,6 +33,7 @@ int main(int argc, char **argv)
     int ignore_option = 0;
     int out_fd = -1;
     int in_fd = -1;
+    int fib_input = -1;
 
     for (int i = 1; i < argc; i++) {
         if (ignore_option)
@@ -54,6 +56,10 @@ int main(int argc, char **argv)
             if (req == ASSEMBLE_AND_WRITE_ELF)
                 FATAL(-1, "-w and -x used together, see -h\n");
             req = LOAD_ELF_AND_EVAL;
+        } else if (!strcmp(argv[i], "-f")) {
+            if (i++ == argc - 1)
+                FATAL(-1, "Missing input for Fib. function\n");
+            fib_input = atoi(argv[i]);
         } else if (!strcmp(argv[i], "-")) {
             if (in_file)
                 FATAL(-1, "more than one input file, see -h\n");
@@ -105,6 +111,9 @@ int main(int argc, char **argv)
     case ASSEMBLE_AND_EVAL: {
         vm_env *env = vm_new();
         assemble_from_fd(env, in_fd);
+        if (fib_input >= 0) {
+            vm_set_temp_int_value(env, 0, fib_input);
+        }
         hook_opcodes(env);
         vm_run(env);
         vm_free(env);
